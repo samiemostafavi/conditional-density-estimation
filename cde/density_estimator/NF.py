@@ -99,6 +99,14 @@ class NormalizingFlowEstimator(BaseNNEstimator):
         # build tensorflow model
         self._build_model()
 
+    def starttfsession(self):
+        # If no session has yet been created, create one and make it the default
+        self.sess = tf.get_default_session() if tf.get_default_session() else tf.InteractiveSession()
+
+    def _setup_inference_and_initialize(self):
+        # If no session has yet been created, create one and make it the default
+        self.sess = tf.get_default_session() if tf.get_default_session() else tf.InteractiveSession()
+
     def fit(self, X, Y, random_seed=None, verbose=True, eval_set=None, **kwargs):
         """
         Fit the model with to the provided data

@@ -1,3 +1,7 @@
+# misc files
+.DS_Store
+cde.code-workspace
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -104,6 +108,12 @@ ENV/
 
 # data folder
 data/
+
+# results folder
+results/
+
+# saves folder
+saves/
 
 # datafiles
 .xml

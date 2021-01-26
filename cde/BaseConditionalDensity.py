@@ -7,10 +7,11 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
+from scipy.integrate import quad
 
 
 import scipy
-from cde.utils.optimizers import find_root_newton_method, find_root_by_bounding
+from cde.utils.optimizers import find_root_newton_method, new_find_root_by_bounding
 
 """ Default Numerical Integration Standards"""
 N_SAMPLES_INT = 10**5
@@ -249,6 +250,25 @@ class ConditionalDensity(BaseEstimator):
     cdf_fun = lambda y: self.cdf(x_cond, y) - alpha
     init_bound = init_bound * np.ones(x_cond.shape[0])
     return find_root_by_bounding(cdf_fun, left=-init_bound, right=init_bound, eps=eps)
+  
+  def new_quantile_cdf_m(self, x_cond, alpha=0.01, eps=1e-8, init_bound=1e3):
+    # finds the alpha quantile of the distribution through root finding by bounding
+
+    cdf_fun = lambda y: self.cdf(x_cond, y) - alpha
+    
+    init_bound = init_bound * np.ones(x_cond.shape[0])
+    return new_find_root_by_bounding(cdf_fun, left=np.array([0]), right=np.array([init_bound]), eps=eps)[0][0]
+
+  
+  def find_perc(self,alpha,x_cond,eps=1e-8, init_bound=200):
+    # finds alpha percentile of the distribution through root finding by bounding
+
+    f = lambda x: self.pdf(x_cond,np.array([x]))[0]
+    cdf_fun = lambda y: np.array([quad(f, y, init_bound)[0]])
+
+    cdf_root = lambda y: alpha - cdf_fun(y) 
+    init_bound = init_bound * np.ones(x_cond.shape[0])
+    return new_find_root_by_bounding(cdf_root, left=np.array([0]), right=np.array([init_bound]), eps=eps)[0][0]
 
   """ CONDITONAL VALUE-AT-RISK """
 
@@ -314,7 +334,7 @@ class ConditionalDensity(BaseEstimator):
     else:
       return X, Y
 
-  def plot2d(self, x_cond=[0, 1, 2], ylim=(-8, 8), resolution=100, mode='pdf', show=True, prefix='', numpyfig=False):
+  def plot2d(self, x_cond=[0, 1, 2], ylim=(-8, 8), resolution=100, mode='pdf', show=True, prefix='', numpyfig=False, fsize=[5,5],fdpi=500,fxlabel="x",fylabel="y"):
     """ Generates a 3d surface plot of the fitted conditional distribution if x and y are 1-dimensional each
 
         Args:
@@ -326,11 +346,11 @@ class ConditionalDensity(BaseEstimator):
     # prepare mesh
 
     # turn off interactive mode is show is set to False
-    if show == False and mpl.is_interactive():
-      plt.ioff()
-      mpl.use('Agg')
+    #if show == False and mpl.is_interactive():
+    #  plt.ioff()
+    #  mpl.use('Agg')
 
-    fig = plt.figure(dpi=300)
+    fig = plt.figure(dpi=fdpi,figsize=fsize)
     labels = []
 
     for i in range(len(x_cond)):
@@ -351,10 +371,10 @@ class ConditionalDensity(BaseEstimator):
 
       plt_out = plt.plot(Y, Z, label=label)
 
-    plt.legend([prefix + label for label in labels], loc='upper right')
+    #plt.legend([prefix + label for label in labels], loc='upper right')
 
-    plt.xlabel("x")
-    plt.ylabel("y")
+    plt.xlabel(fxlabel)
+    plt.ylabel(fylabel)
     if show:
       plt.show()
 

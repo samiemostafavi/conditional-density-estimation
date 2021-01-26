@@ -116,6 +116,43 @@ def find_root_newton_method(fun, grad, x0, eps=1e-6, learning_rate=2e-3, max_ite
 
     return x
 
+def new_find_root_by_bounding(fun, left, right, eps=1e-8, max_iter=1e4):
+    """
+    Root finding method that uses selective shrinking of a target interval bounded by left and right
+    --> other than the newton method, this method only works for for vectorized univariate functions
+    Args:
+        fun (callable): function f for which f(x) = 0 shall be solved
+        left: (np.ndarray): initial left bound
+        right (np.ndarray): initial right bound
+        eps (float): tolerance
+        max_iter (int): maximum iterations
+    """
+
+    assert callable(fun)
+
+    n_iter = 0
+    approx_error = 1e10
+    while approx_error > eps:
+        middle = (right + left)/2
+        f = fun(middle)
+
+        left_of_zero = (f < 0).flatten()
+
+        if left_of_zero:
+            left = middle
+        else:
+            right = middle
+
+        assert np.all(left <= right)
+
+        approx_error = np.mean(np.abs(right-left))/2
+        n_iter += 1
+
+        if n_iter > max_iter:
+            warnings.warn("Max_iter has been reached - stopping newton method for determining quantiles")
+            return np.NaN
+
+    return middle
 
 def find_root_by_bounding(fun, left, right, eps=1e-8, max_iter=1e4):
     """
