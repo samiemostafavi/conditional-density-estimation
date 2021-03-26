@@ -229,7 +229,6 @@ class BaseNNEstimator(LayersPowered, Serializable, BaseDensityEstimator):
                 tf.assign(self.y_noise_std_sym, self.y_noise_std),
             ])
 
-
     def _build_input_layers(self):
         # Input_Layers & placeholders
         self.X_ph = tf.placeholder(tf.float32, shape=(None, self.ndim_x))

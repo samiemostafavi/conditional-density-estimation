@@ -172,7 +172,7 @@ class MixtureDensityNetwork(BaseNNMixtureEstimator):
       else:
         self.pdf_ = mixture.prob(self.y_input)
         self.log_pdf_ = mixture.log_prob(self.y_input)
-
+        
       # symbolic tensors for getting the unnormalized mixture components
       if self.data_normalization:
         self.scales_unnormalized = self.scales * self.std_y_sym

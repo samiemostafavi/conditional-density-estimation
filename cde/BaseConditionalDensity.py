@@ -270,6 +270,12 @@ class ConditionalDensity(BaseEstimator):
     init_bound = init_bound * np.ones(x_cond.shape[0])
     return new_find_root_by_bounding(cdf_root, left=np.array([0]), right=np.array([init_bound]), eps=eps)[0][0]
 
+  def find_tail(self,x_cond,y,init_bound=200):
+    # finds alpha percentile of the distribution through root finding by bounding
+
+    f = lambda x: self.pdf(x_cond,np.array([x]))[0]
+    return quad(f, y, init_bound)[0]
+
   """ CONDITONAL VALUE-AT-RISK """
 
   def _conditional_value_at_risk_mc_pdf(self, VaRs, x_cond, alpha=0.01, n_samples=10 ** 6):
