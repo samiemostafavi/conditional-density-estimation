@@ -5,12 +5,17 @@ import h5py
 
 """ load dataset """
 class MatlabDataset():
-    def __init__(self, file_address):
-         contents = sio.loadmat(file_address)
-         self.dataset = contents['datasetclean']
-         self.n_records = len(self.dataset)
-         self.n_features = len(self.dataset[0])
-         print(' Dataset loaded from .mat file. Rows: %d ' % len(self.dataset), ' Columns: %d ' % len(self.dataset[0]) )
+    def __init__(self, file_address, content_key=None):
+        contents = sio.loadmat(file_address)
+        if content_key is None:
+            self.dataset = contents['datasetclean']
+        else:
+            self.dataset = contents[content_key]
+        
+        self.n_records = len(self.dataset)
+        self.n_features = len(self.dataset[0])
+        print('dataset loaded from .mat file. Rows: %d ' % len(self.dataset), ' Columns: %d ' % len(self.dataset[0]))
+
     def get_data(self, n_samples):
         """
         This function returns a vector of n_samples from the dataset randomly
@@ -41,13 +46,27 @@ class MatlabDataset():
         idx = np.random.randint(len(new_ds), size=len(new_ds))
         return new_ds[idx,:]
 
+    def get_data_unshuffled(self, n_samples):
+        """
+        This function returns the first n_samples from the dataset 
+        """
+        return self.dataset[0:n_samples,:]
+
 """ load dataset """
 class MatlabDatasetH5():
-    def __init__(self, file_address):
+    def __init__(self, file_address, content_key=None, select_cols=None):
 
         f = h5py.File(file_address, 'r')
+        if content_key is None:
+            self.dataset = np.transpose(np.array(f['datasetclean']))
+        else:
+            self.dataset = np.transpose(np.array(f[content_key]))
+
+        # select_cols = [1,2,3]
+        if select_cols is not None:
+            self.dataset = self.dataset[:,select_cols]
+            
         #print(f.keys())
-        self.dataset = np.transpose(np.array(f['datasetclean']))
         self.n_records = len(self.dataset)
         self.n_features = len(self.dataset[0])
         print(' Dataset H5 loaded from .mat file. Rows: %d ' % len(self.dataset), ' Columns: %d ' % len(self.dataset[0]) )
@@ -80,3 +99,9 @@ class MatlabDatasetH5():
         new_ds = self.dataset[0:n_samples,:]
         idx = np.random.randint(len(new_ds), size=len(new_ds))
         return new_ds[idx,:]
+
+    def get_data_unshuffled(self, n_samples):
+        """
+        This function returns the first n_samples from the dataset 
+        """
+        return self.dataset[0:n_samples,:]

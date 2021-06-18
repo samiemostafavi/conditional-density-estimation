@@ -81,6 +81,30 @@ class MixtureDensityNetwork(BaseNNMixtureEstimator):
     # build tensorflow model
     self._build_model()
 
+  def cumulative_prob(self,value):
+    res = tf.zeros_like(tf.squeeze(value))
+    self.tres = res
+    for loc, scale, weight in zip(tf.unstack(self.locs, axis=1), tf.unstack( self.scales, axis=1), tf.unstack(self.weights , axis=1)):
+      self.tloc = tf.squeeze(loc)
+      self.tscale = tf.squeeze(scale)
+      self.tweight = tf.squeeze(weight)
+      dist = tf.distributions.Normal(loc=tf.squeeze(loc), scale=tf.squeeze(scale))
+      self.tcdf = dist.cdf(tf.squeeze(value))
+      self.tmult = resmult = tf.multiply(dist.cdf(tf.squeeze(value)),tf.squeeze(weight))
+      res = res + resmult
+    return res
+  
+  def tail_prob(self,values):
+    return 1.00-self.cumulative_prob(values)
+
+  # 1-cdf
+  def tail(self, X, Y):
+    assert self.fitted, "model must be fitted to compute tail probability"
+    X, Y = self._handle_input_dimensionality(X, Y, fitting=False)
+    p = self.sess.run(self.tail_s, feed_dict={self.X_ph: X, self.Y_ph: Y})
+    #assert p.ndim == 1 and p.shape[0] == X.shape[0]
+    return p
+
   def fit(self, X, Y, random_seed=None, verbose=True, eval_set=None, **kwargs):
     """ Fits the conditional density model with provided data
 
@@ -172,6 +196,9 @@ class MixtureDensityNetwork(BaseNNMixtureEstimator):
       else:
         self.pdf_ = mixture.prob(self.y_input)
         self.log_pdf_ = mixture.log_prob(self.y_input)
+
+      self.cdf_s  = self.cumulative_prob(self.y_input)
+      self.tail_s = self.tail_prob(self.y_input)
         
       # symbolic tensors for getting the unnormalized mixture components
       if self.data_normalization:

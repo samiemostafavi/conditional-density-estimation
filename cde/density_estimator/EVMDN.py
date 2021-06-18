@@ -7,6 +7,7 @@ from cde.utils.tf_utils.layers_powered import LayersPowered
 from cde.utils.serializable import Serializable
 from cde.utils.tf_utils.adamW import AdamWOptimizer
 from scipy.integrate import quad
+from cde.utils.optimizers import new_find_root_by_bounding
 
 from .BaseNNMixtureEstimator import BaseNNMixtureEstimator
 
@@ -206,6 +207,15 @@ class ExtremeValueMixtureDensityNetwork(BaseNNMixtureEstimator):
     #assert p.ndim == 1 and p.shape[0] == X.shape[0]
     return p
 
+  # (1-cdf(y)) = T -> y?
+  def tail_inverse(self, X, T, init_bound, eps):
+      assert self.fitted, "model must be fitted to compute tail probability"
+
+      tail_root = lambda y: T - self.tail(X,y)
+      init_bound = init_bound * np.ones(X.shape[0])
+      return new_find_root_by_bounding(tail_root, left=np.array([0]), right=np.array([init_bound]), eps=eps)[0][0]
+
+
   def fit(self, X, Y, random_seed=None, verbose=True, eval_set=None, **kwargs):
     """
     Fit the model with to the provided data
@@ -402,8 +412,8 @@ class ExtremeValueMixtureDensityNetwork(BaseNNMixtureEstimator):
 
 
     # initialize LayersPowered --> provides functions for serializing tf models
-    # LayersPowered.__init__(self, [self.softmax_layer_weights, self.softplus_layer_scales, self.reshape_layer_locs,
-    #                               self.layer_in_y])
+    LayersPowered.__init__(self, [self.softplus_tail_threshold, self.sigmoid_layer_tail_param, self.softmax_layer_weights, self.softplus_layer_scales, self.softplus_layer_locs,
+                                   self.layer_in_y])
 
   def _param_grid(self):
     param_grid = {
